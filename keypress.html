@@ -1,0 +1,113 @@
+<html>
+<head>
+	<title>Test CSS selector</title>
+	<meta charset="utf-8" />
+	<script type="text/javascript">
+		window.onload = function () {
+			if (document.addEventListener) {
+				document.testform.t.addEventListener("keydown",keydownHandler,false);				
+			} else if (document.attachEvent) {
+				document.testform.t.attachEvent("onkeydown", keydownHandler);
+			} else {
+				document.testform.t.onkeydown= keydownHandler;
+			}			
+		}
+		function keydownHandler(e) {
+			if (!e) e=event;
+			if(!checkKey(e)) {
+				if(!e.preventDefault) return false;
+				e.preventDefault();
+			}
+		}
+		function checkKey(e) {			
+			try {
+				var v =e.target.value;
+				var el=e.target;
+			} catch(ee) {
+				var v=e.srcElement.value;
+				var el = e.srcElement;
+			}
+			var sel=getInputSelection(el);
+			var selectStart=sel.start,selectEnd=sel.end;
+			if ((v.length>=13)&&((e.keyCode>=48&&e.keyCode<=57&&e.keyCode==32)||(e.keyCode>=96&&e.keyCode<=105)||(e.keyCode>=65&&e.keyCode<=90))&&(!e.ctrlKey&&!e.altKey)&&(selectStart==selectEnd)) return false;
+			if ((e.keyCode<=57&&e.keyCode!=32)||(e.keyCode>=96&&e.keyCode<=105)||(e.keyCode>=112&&e.keyCode<=123)||(e.ctrlKey||e.shiftKey||e.altKey)) return true;			
+			else if (e.keyCode>=65&&e.keyCode <=90) {
+				var k = String.fromCharCode(e.keyCode);
+				if (e.target) {
+					if (selectStart == v.length)
+						e.target.value += String.fromCharCode(e.keyCode);
+					else if ((selectStart == selectEnd)||(selectStart < selectEnd)) {
+						e.target.value = v.substr(0, selectStart)+k +v.substr(selectEnd, v.length);
+						e.target.selectionStart = selectStart+1;
+						e.target.selectionEnd = selectStart+1;
+					}
+				} else {
+					if (selectStart == v.length)
+						e.srcElement.value += String.fromCharCode(e.keyCode);
+					else if ((selectStart == selectEnd)||(selectStart < selectEnd)) {
+						e.srcElement.value = v.substr(0, selectStart)+k +v.substr(selectEnd, v.length);						
+						var range = e.srcElement.createTextRange();
+						range.collapse(true);
+						range.moveEnd('character', selectStart+1);
+						range.moveStart('character', selectStart+1);
+						range.select();
+					}
+				}
+				return false;
+			}
+		}
+		function getInputSelection(el) {
+			var start = 0, end = 0, normalizedValue, range,
+				textInputRange, len, endRange;
+
+			if (typeof el.selectionStart == "number" && typeof el.selectionEnd == "number") {
+				start = el.selectionStart;
+				end = el.selectionEnd;
+			} else {
+				range = document.selection.createRange();
+				if (range && range.parentElement() == el) {
+					len = el.value.length;
+					normalizedValue = el.value.replace(/\r\n/g, "\n");
+
+					// Create a working TextRange that lives only in the input
+					textInputRange = el.createTextRange();
+					textInputRange.moveToBookmark(range.getBookmark());
+
+					// Check if the start and end of the selection are at the very end
+					// of the input, since moveStart/moveEnd doesn't return what we want
+					// in those cases
+					endRange = el.createTextRange();
+					endRange.collapse(false);
+
+					if (textInputRange.compareEndPoints("StartToEnd", endRange) > -1) {
+						start = end = len;
+					} else {
+						start = -textInputRange.moveStart("character", -len);
+						start += normalizedValue.slice(0, start).split("\n").length - 1;
+
+						if (textInputRange.compareEndPoints("EndToEnd", endRange) > -1) {
+							end = len;
+						} else {
+							end = -textInputRange.moveEnd("character", -len);
+							end += normalizedValue.slice(0, end).split("\n").length - 1;
+						}
+					}
+				}
+			}
+			var obj = {
+				start: start,
+				end: end
+			};
+			return obj;
+		}
+	</script>
+</head>
+<body>
+	<div id="1_div">
+		123
+		<form name="testform">
+			<input type="text" name="t" maxlength="13"/>
+		</form>
+	</div>
+</body>
+</html>
